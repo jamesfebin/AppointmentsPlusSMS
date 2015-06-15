@@ -1482,6 +1482,7 @@ class Appointments {
 	 */
 	function post_confirmation() {
 
+
 		if ( !$this->check_spam() )
 			die( json_encode( array("error"=>apply_filters( 'app_spam_message',__( 'You have already applied for an appointment. Please wait until you hear from us.', 'appointments')))));
 
@@ -1662,7 +1663,7 @@ class Appointments {
 
 		// Send SMS
 
-		if ( isset( $_POST["app_phone"] ) )
+		if ( isset( $_POST["app_phone"] ) &&  ('confirmed' == $status || 'paid' == $status) )
 		{
 			$phone = sanitize_text_field( $_POST["app_phone"] );
 			$this->sendSMS($phone,$start);
@@ -1755,10 +1756,10 @@ class Appointments {
 		$min = round((strtotime(date('Y-m-d H:i',$start)) - strtotime($currentDate->format('Y-m-d H:i'))) /60);
 
 		// Find out minutes remaining from a day prior to the schedule
-		$min = $min - 1440
+		$min = $min - 1440;
 
 		// If the date is today send a notification in the next 5 minutes.
-		if($min <=0 )
+		if ($min <=0 )
 		{
 			$min = 5;
 		}
@@ -1768,8 +1769,18 @@ class Appointments {
 
 		$SMSMessage = urlencode($SMSMessage);
 
-		$response = http_get("https://api.smsbroadcast.com.au/apiadv.php?username="+$SMSAPIUSERNAME+"&password="+$SMSAPIPASSWORD+"&to="+$phone+"&from="+$SENDER_ID+"&
+		try {
+
+
+			$response = http_get("https://api.smsbroadcast.com.au/apiadv.php?username="+$SMSAPIUSERNAME+"&password="+$SMSAPIPASSWORD+"&to="+$phone+"&from="+$SENDER_ID+"&
 message="+$SMSMessage+"&maxsplit=5&delay="+$min);
+
+
+		} catch (Exception $e) {
+		    echo 'Caught exception: ',  $e->getMessage(), "\n";
+		}
+
+
 
 		return true;
 	}
